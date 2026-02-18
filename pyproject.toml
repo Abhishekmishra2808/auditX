@@ -20,6 +20,11 @@ dev = [
     "pandas>=1.5.0",
 ]
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["financial_mapper*", "web*"]
+exclude = ["tests*", "static*", "templates*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"

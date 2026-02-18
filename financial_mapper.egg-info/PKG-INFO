@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: financial-mapper
+Version: 1.0.0
+Summary: Semantic financial extraction engine — maps inconsistent balance sheet labels to a standardised schema.
+Requires-Python: >=3.10
+Requires-Dist: rapidfuzz>=3.0.0
+Requires-Dist: openpyxl>=3.0.0
+Requires-Dist: flask>=2.0.0
+Provides-Extra: pandas
+Requires-Dist: pandas>=1.5.0; extra == "pandas"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pandas>=1.5.0; extra == "dev"
