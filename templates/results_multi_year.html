@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Multi-Year Analysis — auditX{% endblock %}
+
+{% block content %}
+<div class="results-section">
+    <div class="header-actions">
+        <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28">
+                <path d="M3 3v18h18"/>
+                <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+            </svg>
+            Multi-Year Analysis: <span class="accent">{{ filename }}</span>
+        </h2>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12,19 5,12 12,5"/>
+            </svg>
+            Upload Another
+        </a>
+    </div>
+
+    <!-- Year Summary Cards -->
+    <div class="card">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Detected Years: {{ years|length }} periods
+        </h3>
+        <div class="stats-grid">
+            {% for year in years %}
+            <div class="stat-card">
+                <div class="stat-value">{{ year }}</div>
+                <div class="stat-label">{{ year_results[year].mappings|length }} fields extracted</div>
+                <div class="stat-label text-muted">{{ year_results[year].unmapped|length }} unmapped</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Year-wise Financial Values Comparison -->
+    <div class="card">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+            Financial Values by Year
+        </h3>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Financial Item</th>
+                        {% for year in years %}
+                        <th class="text-right">{{ year }}</th>
+                        {% endfor %}
+                        <th class="text-right">Change</th>
+                        <th class="text-right">% Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set all_fields = [] %}
+                    {% for year in years %}
+                        {% for field in all_mapped[year].keys() %}
+                            {% if field not in all_fields %}
+                                {% set _ = all_fields.append(field) %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                    
+                    {% for field in all_fields %}
+                    <tr>
+                        <td><strong>{{ field }}</strong></td>
+                        {% set values = [] %}
+                        {% for year in years %}
+                            {% set value = all_mapped[year].get(field) %}
+                            {% set _ = values.append(value) %}
+                            <td class="text-right mono-num">
+                                {% if value is not none and value is number %}
+                                    {{ "{:,.2f}".format(value) }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        
+                        {# Calculate change between first and last year #}
+                        {% set first_val = values[0] if values|length > 0 else none %}
+                        {% set last_val = values[-1] if values|length > 0 else none %}
+                        
+                        <td class="text-right mono-num">
+                            {% if first_val is not none and last_val is not none and first_val is number and last_val is number %}
+                                {% set change = last_val - first_val %}
+                                <span class="{% if change > 0 %}text-success{% elif change < 0 %}text-danger{% endif %}">
+                                    {{ "{:+,.2f}".format(change) }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="text-right mono-num">
+                            {% if first_val is not none and last_val is not none and first_val is number and last_val is number and first_val != 0 %}
+                                {% set pct_change = ((last_val - first_val) / first_val) * 100 %}
+                                <span class="{% if pct_change > 0 %}text-success{% elif pct_change < 0 %}text-danger{% endif %}">
+                                    {{ "{:+.1f}".format(pct_change) }}%
+                                </span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Financial Ratios Comparison by Year -->
+    {% set ratio_categories = all_ratios[years[0]].keys() if years|length > 0 else [] %}
+    {% for category in ratio_categories %}
+    <div class="card">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                {% if category == 'Liquidity' %}
+                <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+                {% elif category == 'Profitability' %}
+                <line x1="12" y1="20" x2="12" y2="10"/>
+                <line x1="18" y1="20" x2="18" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="16"/>
+                {% elif category == 'Leverage' %}
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M16 8l-8 8M8 8h8v8"/>
+                {% elif category == 'Efficiency' %}
+                <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+                {% elif category == 'Coverage' %}
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                {% else %}
+                <path d="M12 20V10M18 20V4M6 20v-4"/>
+                {% endif %}
+            </svg>
+            {{ category }} Ratios - Year-wise Comparison
+        </h3>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Ratio</th>
+                        <th>Formula</th>
+                        {% for year in years %}
+                        <th class="text-center">{{ year }}</th>
+                        {% endfor %}
+                        <th class="text-center">Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set category_ratios = all_ratios[years[0]][category] %}
+                    {% for ratio_name in category_ratios.keys() %}
+                    <tr>
+                        <td><strong>{{ ratio_name }}</strong></td>
+                        <td class="text-muted">{{ category_ratios[ratio_name].formula }}</td>
+                        
+                        {% set ratio_values = [] %}
+                        {% for year in years %}
+                            {% set ratio_data = all_ratios[year][category][ratio_name] %}
+                            {% if ratio_data.percentage is defined and ratio_data.percentage is not none %}
+                                {% set value = ratio_data.percentage %}
+                            {% elif ratio_data.value is defined and ratio_data.value is not none %}
+                                {% set value = ratio_data.value %}
+                            {% else %}
+                                {% set value = none %}
+                            {% endif %}
+                            {% set _ = ratio_values.append(value) %}
+                            
+                            <td class="text-center mono-num">
+                                {% if value is not none %}
+                                    {% if ratio_data.percentage is defined and ratio_data.percentage is not none %}
+                                        {{ "{:.2f}".format(ratio_data.percentage) }}%
+                                    {% elif ratio_data.value is defined and ratio_data.value is not none %}
+                                        {{ "{:.2f}".format(ratio_data.value) }}
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        
+                        {# Trend indicator #}
+                        <td class="text-center">
+                            {% set first = ratio_values[0] %}
+                            {% set last = ratio_values[-1] %}
+                            {% if first is not none and last is not none %}
+                                {% if last > first %}
+                                    <span class="text-success" title="Improving">▲</span>
+                                {% elif last < first %}
+                                    <span class="text-danger" title="Declining">▼</span>
+                                {% else %}
+                                    <span class="text-muted" title="Stable">━</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Detailed breakdown per year (expandable sections) -->
+    <div class="card">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <polyline points="9,18 15,12 9,6"/>
+            </svg>
+            Detailed Year-wise Reports
+        </h3>
+        <p class="card-desc">Click on a year to see detailed extraction and validation information</p>
+        
+        {% for year in years %}
+        <details class="year-details">
+            <summary class="year-summary">
+                <strong>{{ year }}</strong>
+                <span class="badge badge-info">{{ year_results[year].mappings|length }} mapped</span>
+                <span class="badge badge-warning">{{ year_results[year].unmapped|length }} unmapped</span>
+                {% if year_results[year].validation_warnings %}
+                <span class="badge badge-warning">{{ year_results[year].validation_warnings|length }} warnings</span>
+                {% endif %}
+            </summary>
+            
+            <div class="year-content">
+                <!-- Mapped fields for this year -->
+                <h4>Extracted Values</h4>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Canonical Field</th>
+                                <th>Original Label</th>
+                                <th class="text-right">Value</th>
+                                <th class="text-center">Confidence</th>
+                                <th class="text-center">Method</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mapping in year_results[year].mappings %}
+                            <tr>
+                                <td><strong>{{ mapping.canonical_name }}</strong></td>
+                                <td class="text-muted">{{ mapping.raw_label }}</td>
+                                <td class="text-right mono-num">
+                                    {% if mapping.value is number %}
+                                        {{ "{:,.2f}".format(mapping.value) }}
+                                    {% else %}
+                                        {{ mapping.value }}
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge {% if mapping.confidence == 100 %}badge-success{% elif mapping.confidence >= 80 %}badge-warning{% else %}badge-danger{% endif %}">
+                                        {{ mapping.confidence }}%
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-info">{{ mapping.match_method }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Unmapped fields for this year -->
+                {% if year_results[year].unmapped %}
+                <h4 style="margin-top: 2rem;">Unmapped Fields</h4>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Original Label</th>
+                                <th class="text-right">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in year_results[year].unmapped %}
+                            <tr>
+                                <td>{{ item.raw_label }}</td>
+                                <td class="text-right mono-num">{{ item.raw_value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <!-- Warnings for this year -->
+                {% if year_results[year].validation_warnings %}
+                <h4 style="margin-top: 2rem;">Warnings</h4>
+                <ul class="warning-list">
+                    {% for warning in year_results[year].validation_warnings %}
+                    <li>{{ warning }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </details>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.year-details {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin: 1rem 0;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.year-summary {
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    user-select: none;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.year-summary:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.year-summary strong {
+    color: #00e5a0;
+    min-width: 120px;
+}
+
+.year-content {
+    padding: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.year-content h4 {
+    color: #00e5a0;
+    margin-bottom: 1rem;
+}
+
+.text-success {
+    color: #00e5a0;
+}
+
+.text-danger {
+    color: #ef4444;
+}
+
+.text-muted {
+    color: #94a3b8;
+}
+</style>
+{% endblock %}

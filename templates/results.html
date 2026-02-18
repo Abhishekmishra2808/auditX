@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results — auditX{% endblock %}
+
+{% block content %}
+<div class="results-section">
+    <div class="header-actions">
+        <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28">
+                <path d="M12 20V10M18 20V4M6 20v-4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Analysis Results: <span class="accent">{{ filename }}</span>
+        </h2>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12,19 5,12 12,5"/>
+            </svg>
+            Upload Another
+        </a>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" stroke-width="1.5" width="28" height="28">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                <polyline points="22,4 12,14.01 9,11.01"/>
+            </svg>
+            <div class="stat-value">{{ result.mappings|length }}</div>
+            <div class="stat-label">Extracted Fields</div>
+        </div>
+        <div class="stat-card">
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5" width="28" height="28">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div class="stat-value">{{ result.unmapped|length }}</div>
+            <div class="stat-label">Unmapped Fields</div>
+        </div>
+        <div class="stat-card">
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5" width="28" height="28">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div class="stat-value">{{ result.validation_warnings|length }}</div>
+            <div class="stat-label">Warnings</div>
+        </div>
+        <div class="stat-card {% if result.success %}stat-success{% else %}stat-error{% endif %}">
+            {% if result.success %}
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" stroke-width="2" width="28" height="28">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                <polyline points="22,4 12,14.01 9,11.01"/>
+            </svg>
+            {% else %}
+            <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" width="28" height="28">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            {% endif %}
+            <div class="stat-value">{% if result.success %}Pass{% else %}Fail{% endif %}</div>
+            <div class="stat-label">{% if result.success %}Success{% else %}Failed{% endif %}</div>
+        </div>
+    </div>
+
+    <!-- Extracted Values -->
+    <div class="card">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+            Extracted Financial Values
+        </h3>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Canonical Field</th>
+                        <th>Original Label</th>
+                        <th class="text-right">Value</th>
+                        <th class="text-center">Confidence</th>
+                        <th class="text-center">Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mapping in result.mappings %}
+                    <tr {% if mapping.warnings %}class="row-warning"{% endif %}>
+                        <td><strong>{{ mapping.canonical_name }}</strong></td>
+                        <td class="text-muted">{{ mapping.raw_label }}</td>
+                        <td class="text-right mono-num">
+                            {% if mapping.value is number %}
+                                {{ "{:,.2f}".format(mapping.value) }}
+                            {% else %}
+                                {{ mapping.value }}
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge {% if mapping.confidence == 100 %}badge-success{% elif mapping.confidence >= 80 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {{ mapping.confidence }}%
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-info">{{ mapping.match_method }}</span>
+                        </td>
+                    </tr>
+                    {% if mapping.warnings %}
+                    <tr class="warning-row">
+                        <td colspan="5">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" style="vertical-align: middle; margin-right: 4px;">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            <small>{{ mapping.warnings|join(', ') }}</small>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Financial Ratios -->
+    {% for category, category_ratios in ratios.items() %}
+    <div class="card">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                {% if category == 'Liquidity' %}
+                <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+                {% elif category == 'Profitability' %}
+                <line x1="12" y1="20" x2="12" y2="10"/>
+                <line x1="18" y1="20" x2="18" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="16"/>
+                {% elif category == 'Leverage' %}
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M16 8l-8 8M8 8h8v8"/>
+                {% elif category == 'Efficiency' %}
+                <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+                {% elif category == 'Coverage' %}
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                {% else %}
+                <path d="M12 20V10M18 20V4M6 20v-4"/>
+                {% endif %}
+            </svg>
+            {{ category }} Ratios
+        </h3>
+        <div class="ratios-grid">
+            {% for ratio_name, ratio_data in category_ratios.items() %}
+            <div class="ratio-card {% if ratio_data.value is not none %}ratio-has-value{% endif %}">
+                <h4>{{ ratio_name }}</h4>
+
+                {% if ratio_data.value is not none %}
+                    <div class="ratio-value">
+                        {% if ratio_data.percentage is defined and ratio_data.percentage is not none %}
+                            {{ "{:.2f}".format(ratio_data.percentage) }}<span class="ratio-unit">%</span>
+                        {% else %}
+                            {{ "{:.2f}".format(ratio_data.value) }}
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="ratio-value ratio-na">N/A</div>
+                {% endif %}
+
+                <div class="ratio-formula">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" style="vertical-align: middle; opacity: 0.5;">
+                        <polyline points="16,18 22,12 16,6"/>
+                        <polyline points="8,6 2,12 8,18"/>
+                    </svg>
+                    {{ ratio_data.formula }}
+                </div>
+                <div class="ratio-interpretation">
+                    {{ ratio_data.interpretation }}
+                </div>
+
+                {% if ratio_data.days is defined and ratio_data.days is not none %}
+                <div class="ratio-days">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" style="vertical-align: middle;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12,6 12,12 16,14"/>
+                    </svg>
+                    {{ "{:.0f}".format(ratio_data.days) }} days
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Unmapped Fields -->
+    {% if result.unmapped %}
+    <div class="card card-warning">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Unmapped Fields
+        </h3>
+        <p class="card-desc">The following fields could not be mapped to the canonical schema:</p>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Original Label</th>
+                        <th class="text-right">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in result.unmapped %}
+                    <tr>
+                        <td>{{ item.raw_label }}</td>
+                        <td class="text-right mono-num">{{ item.raw_value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Validation Warnings -->
+    {% if result.validation_warnings %}
+    <div class="card card-warning">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Validation Warnings
+        </h3>
+        <ul class="warning-list">
+            {% for warning in result.validation_warnings %}
+            <li>{{ warning }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Validation Errors -->
+    {% if result.validation_errors %}
+    <div class="card card-error">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            Validation Errors
+        </h3>
+        <ul class="error-list">
+            {% for error in result.validation_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

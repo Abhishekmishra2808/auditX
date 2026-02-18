@@ -1,0 +1,22 @@
+{
+    "profit after tax": "Net Profit",
+    "pat": "Net Profit",
+    "owners funds": "Net Worth",
+    "current liabilities total": "Current Liabilities",
+    "short term borrowings": "Current Liabilities",
+    "total equity and liabilities": "Total Liabilities",
+    "preliminary expenses": "Intangible Assets",
+    "investment in subsidiaries": "Fixed Assets",
+    "provision for doubtful debts": "Trade Receivables",
+    "bills receivable": "Trade Receivables",
+    "bills payable": "Trade Payables",
+    "cash in hand": "Cash and Cash Equivalents",
+    "bank deposits": "Cash and Cash Equivalents",
+    "marketing expenses": "Indirect Expenses",
+    "selling expenses": "Indirect Expenses",
+    "distribution expenses": "Indirect Expenses",
+    "wages": "Direct Expenses",
+    "raw material consumed": "Direct Expenses",
+    "salary expense": "Indirect Expenses",
+    "rent expense": "Fixed Cost"
+}

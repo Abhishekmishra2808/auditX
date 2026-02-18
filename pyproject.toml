@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "financial-mapper"
+version = "1.0.0"
+description = "Semantic financial extraction engine — maps inconsistent balance sheet labels to a standardised schema."
+requires-python = ">=3.10"
+dependencies = [
+    "rapidfuzz>=3.0.0",
+]
+
+[project.optional-dependencies]
+pandas = ["pandas>=1.5.0"]
+dev = [
+    "pytest>=7.0.0",
+    "pandas>=1.5.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
