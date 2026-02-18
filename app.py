@@ -15,6 +15,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, Union
+import tempfile
 
 from flask import Flask, render_template, request, flash, redirect, url_for
 from werkzeug.utils import secure_filename
@@ -30,8 +31,8 @@ from web.ratio_calculator import RatioCalculator
 app = Flask(__name__)
 app.secret_key = "auditx-secret-key-change-in-production"
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB max upload
-app.config["UPLOAD_FOLDER"] = Path("uploads")
-app.config["UPLOAD_FOLDER"].mkdir(exist_ok=True)
+# Use /tmp for uploads in serverless environment (Vercel)
+app.config["UPLOAD_FOLDER"] = Path("/tmp")
 
 ALLOWED_EXTENSIONS = {"csv", "json", "txt", "xlsx", "xls"}
 
