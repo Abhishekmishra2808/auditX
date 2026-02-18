@@ -1,6 +1,6 @@
 /* ============================================================================
-   auditX — Dark Theme Styles
-   Font: Roboto Mono  |  Palette: Black + Emerald Accent
+   auditX — Theme Styles with Dark/Light Toggle
+   Font: Roboto Mono  |  Palette: Dark + Light with Emerald Accent
    ============================================================================ */
 
 /* --------------------------------------------------------------------------
@@ -12,6 +12,7 @@
     box-sizing: border-box;
 }
 
+/* Dark Theme (Default) */
 :root {
     --bg: #0a0a0b;
     --bg-card: #111113;
@@ -34,6 +35,29 @@
     --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
     --radius: 10px;
     --radius-sm: 6px;
+}
+
+/* Light Theme */
+[data-theme="light"] {
+    --bg: #f8f9fa;
+    --bg-card: #fefefe;
+    --bg-elevated: #ffffff;
+    --bg-input: #f5f5f7;
+    --border: #e5e7eb;
+    --border-light: #d1d5db;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --accent: #00c98b;
+    --accent-dim: #00a673;
+    --accent-glow: rgba(0, 201, 139, 0.08);
+    --accent-glow-strong: rgba(0, 201, 139, 0.15);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 body {
@@ -119,6 +143,75 @@ main {
     font-size: 0.75rem;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   Theme Toggle Button
+   -------------------------------------------------------------------------- */
+.theme-toggle {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    position: relative;
+    width: 70px;
+    height: 36px;
+}
+
+.theme-toggle:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+}
+
+.theme-toggle-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.theme-toggle-icon.sun {
+    left: 8px;
+    opacity: 0;
+}
+
+.theme-toggle-icon.moon {
+    right: 8px;
+    opacity: 1;
+}
+
+[data-theme="light"] .theme-toggle-icon.sun {
+    opacity: 1;
+    color: var(--accent);
+}
+
+[data-theme="light"] .theme-toggle-icon.moon {
+    opacity: 0;
+}
+
+.theme-toggle-slider {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background: var(--accent);
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+[data-theme="light"] .theme-toggle-slider {
+    left: 40px;
 }
 
 /* --------------------------------------------------------------------------
@@ -291,6 +384,10 @@ input[type="file"] {
     width: 100%;
 }
 
+[data-theme="light"] .btn-primary {
+    color: #ffffff;
+}
+
 .btn-primary:hover {
     background: var(--accent-dim);
     transform: translateY(-1px);
@@ -351,6 +448,10 @@ input[type="file"] {
 
 .feature-item:hover {
     background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="light"] .feature-item:hover {
+    background: rgba(0, 0, 0, 0.03);
 }
 
 .feature-item svg {
@@ -547,6 +648,10 @@ input[type="file"] {
 
 .data-table tbody tr:hover {
     background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="light"] .data-table tbody tr:hover {
+    background: rgba(0, 0, 0, 0.02);
 }
 
 .data-table tbody tr:last-child td {
