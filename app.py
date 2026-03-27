@@ -20,10 +20,15 @@ import tempfile
 
 from flask import Flask, render_template, request, flash, redirect, url_for
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
 
-# Load .env file for API keys
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
+# Load .env file for API keys when python-dotenv is available.
+if load_dotenv is not None:
+    load_dotenv()
 
 from financial_mapper.config import MatchingConfig, PipelineConfig, ValidationConfig
 from financial_mapper.pipeline import FinancialMappingPipeline
