@@ -129,3 +129,81 @@ class Validator:
                     f"max_absolute_value ({self._config.max_absolute_value}). "
                     f"Possible unit error?"
                 )
+
+    # ------------------------------------------------------------------ #
+    # Hierarchy validation
+    # ------------------------------------------------------------------ #
+
+    def validate_hierarchy(
+        self,
+        tree: dict,
+        tolerance: float = 0.01,
+    ) -> ValidationReport:
+        """Validate that hierarchy children sums match stated totals.
+
+        Parameters
+        ----------
+        tree:
+            The hierarchy tree from ``build_hierarchy()``.
+        tolerance:
+            Relative tolerance for mismatch detection.
+
+        Returns
+        -------
+        ValidationReport
+            Contains warnings for any children-vs-total mismatches.
+        """
+        report = ValidationReport()
+        self._check_hierarchy_node(tree, report, tolerance)
+        return report
+
+    def _check_hierarchy_node(
+        self,
+        tree: dict,
+        report: ValidationReport,
+        tolerance: float,
+    ) -> None:
+        """Recursively check each section in the hierarchy tree."""
+        for label, node in tree.items():
+            if not isinstance(node, dict):
+                continue
+
+            children = node.get("children", {})
+            stated_total = node.get("total")
+
+            # Recurse into nested sections
+            for child_label, child_val in children.items():
+                if isinstance(child_val, dict):
+                    self._check_hierarchy_node(
+                        {child_label: child_val}, report, tolerance
+                    )
+
+            # Sum numeric children
+            child_sum = 0.0
+            has_numeric = False
+            for child_val in children.values():
+                if isinstance(child_val, (int, float)):
+                    child_sum += float(child_val)
+                    has_numeric = True
+                elif isinstance(child_val, dict):
+                    nested_total = child_val.get("total")
+                    if nested_total is not None and isinstance(nested_total, (int, float)):
+                        child_sum += float(nested_total)
+                        has_numeric = True
+
+            if has_numeric and stated_total is not None and isinstance(stated_total, (int, float)):
+                stated = float(stated_total)
+                if stated != 0:
+                    rel_diff = abs(child_sum - stated) / abs(stated)
+                    if rel_diff > tolerance:
+                        report.add_warning(
+                            f"Hierarchy mismatch for '{label}': "
+                            f"children sum ({child_sum:.2f}) ≠ "
+                            f"stated total ({stated:.2f}), "
+                            f"relative diff = {rel_diff:.4f}"
+                        )
+                elif child_sum != 0:
+                    report.add_warning(
+                        f"Hierarchy mismatch for '{label}': "
+                        f"stated total is 0 but children sum to {child_sum:.2f}"
+                    )

@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}Multi-Year Analysis Results — auditX{% endblock %}
+
+{% block content %}
+<div class="results-section">
+    <div class="header-actions">
+        <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28">
+                <path d="M12 20V10M18 20V4M6 20v-4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Multi-Year Analysis: <span class="accent">{{ filename }}</span>
+        </h2>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12,19 5,12 12,5"/>
+            </svg>
+            Upload Another
+        </a>
+    </div>
+
+    <!-- GSTIN Verification Section (if provided) -->
+    {% if gstin %}
+    <div class="card" style="background: {% if gstin_valid %}#f0fdf4{% else %}#fefce8{% endif %}; border-left: 4px solid {% if gstin_valid %}#22c55e{% else %}#f59e0b{% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+            <div>
+                <h3 style="margin-top: 0;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="{% if gstin_valid %}#22c55e{% else %}#f59e0b{% endif %}" stroke-width="1.5" width="22" height="22" style="display: inline; margin-right: 0.5rem; vertical-align: middle;">
+                        {% if gstin_valid %}
+                        <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                        {% else %}
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        {% endif %}
+                    </svg>
+                    GST Information
+                </h3>
+                <p style="margin: 0.5rem 0; font-family: monospace; font-weight: 500;">{{ gstin }}</p>
+                <p style="margin: 0.5rem 0; opacity: 0.8; font-size: 0.9em;">{{ gst_message }}</p>
+                {% if gstin_valid and gstin_portal_url %}
+                <a href="{{ gstin_portal_url }}" target="_blank" class="btn btn-primary" style="display: inline-block; margin-top: 0.5rem; text-decoration: none; padding: 8px 16px; background: #22c55e; color: white; border-radius: 4px; font-size: 0.9em;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="display: inline; margin-right: 0.5rem; vertical-align: middle;">
+                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                    Verify on GST Portal →
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Year Selection Tabs -->
+    <div class="card">
+        <div style="display: flex; gap: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 16px; overflow-x: auto;">
+            {% for year in years %}
+            <button class="year-tab{% if loop.first %} active{% endif %}" onclick="switchYear({{ year }})">
+                {{ year }}
+            </button>
+            {% endfor %}
+        </div>
+
+        {% for year in years %}
+        <div id="year-{{ year }}" class="year-content"{% if not loop.first %} style="display:none;"{% endif %}>
+            
+            <!-- Raw Extracted Terms for this Year -->
+            <h3 style="margin-top: 0;">Raw Extracted Terms - {{ year }}</h3>
+            <p class="card-desc">Original field names and values from {{ year }}:</p>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Field Name</th>
+                            <th class="text-right">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for term, value in all_raw_terms[year].items() %}
+                        <tr>
+                            <td><strong>{{ term }}</strong></td>
+                            <td class="text-right mono-num">
+                                {% if value is number %}
+                                    {{ "{:,.2f}".format(value) }}
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Financial Ratios for this Year -->
+            {% if all_ratios[year] %}
+            <h3 style="margin-top: 2rem;">Financial Ratios - {{ year }}</h3>
+            <p class="card-desc">Ratios calculated with LLM-selected terms:</p>
+            
+            {% for category, category_ratios in all_ratios[year].items() %}
+            <div style="margin-top: 1.5rem;">
+                <h4>{{ category }} Ratios</h4>
+                <div class="ratios-grid">
+                    {% for ratio_name, ratio_data in category_ratios.items() %}
+                    <div class="ratio-card ratio-has-value">
+                        <h5>{{ ratio_name }}</h5>
+                        
+                        <div class="ratio-value">
+                            {% if ratio_data.percentage is defined and ratio_data.percentage is not none %}
+                                {{ "{:.2f}".format(ratio_data.percentage) }}<span class="ratio-unit">%</span>
+                            {% else %}
+                                {{ "{:.2f}".format(ratio_data.value) }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="ratio-formula">
+                            <small style="opacity: 0.7;">Formula:</small><br/>
+                            {{ ratio_data.formula }}
+                        </div>
+                        
+                        {% if ratio_data.llm_selection %}
+                        <div style="background: #f0f9ff; padding: 8px; margin: 8px 0; border-radius: 4px; font-size: 0.85em; border-left: 3px solid #0ea5e9;">
+                            <strong>LLM Selected:</strong> {{ ratio_data.llm_selection }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="ratio-interpretation">
+                            <small>{{ ratio_data.interpretation }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p class="card-desc">No ratios could be calculated for {{ year }}.</p>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Year-over-Year Comparison -->
+    {% if years|length > 1 %}
+    <div class="card" style="margin-top: 2rem;">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <path d="M7 12l5 5 8-8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Year-over-Year Comparison
+        </h3>
+        <p class="card-desc">Key metrics across years:</p>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Ratio</th>
+                        {% for year in years %}
+                        <th class="text-right">{{ year }}</th>
+                        {% endfor %}
+                        <th class="text-right">Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set all_ratio_names = [] %}
+                    {% for year in years %}
+                        {% for category, category_ratios in all_ratios[year].items() %}
+                            {% for ratio_name in category_ratios.keys() %}
+                                {% if ratio_name not in all_ratio_names %}
+                                    {% do all_ratio_names.append(ratio_name) %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    {% endfor %}
+                    
+                    {% for ratio_name in all_ratio_names %}
+                    <tr>
+                        <td><strong>{{ ratio_name }}</strong></td>
+                        {% set values = [] %}
+                        {% for year in years %}
+                            {% set found = false %}
+                            {% for category, category_ratios in all_ratios[year].items() %}
+                                {% if ratio_name in category_ratios %}
+                                    {% set ratio_val = category_ratios[ratio_name] %}
+                                    {% do values.append(ratio_val.value) %}
+                                    <td class="text-right mono-num">
+                                        {% if ratio_val.percentage is defined and ratio_val.percentage is not none %}
+                                            {{ "{:.2f}".format(ratio_val.percentage) }}%
+                                        {% else %}
+                                            {{ "{:.2f}".format(ratio_val.value) }}
+                                        {% endif %}
+                                    </td>
+                                    {% set found = true %}
+                                    {% break %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if not found %}
+                            <td class="text-right" style="opacity: 0.5;">—</td>
+                            <td style="opacity: 0.5;">
+                            </td>
+                            {% endif %}
+                        {% endfor %}
+                        {% if values|length == 2 %}
+                        <td class="text-right mono-num">
+                            {% set change = values[1] - values[0] %}
+                            {% if change > 0 %}
+                                <span style="color: #10b981;">+{{ "{:.2f}".format(change) }}</span>
+                            {% elif change < 0 %}
+                                <span style="color: #ef4444;">{{ "{:.2f}".format(change) }}</span>
+                            {% else %}
+                                <span>{{ "{:.2f}".format(change) }}</span>
+                            {% endif %}
+                        </td>
+                        {% else %}
+                        <td></td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function switchYear(year) {
+    // Hide all year contents
+    document.querySelectorAll('.year-content').forEach(el => {
+        el.style.display = 'none';
+    });
+    
+    // Remove active state from all tabs
+    document.querySelectorAll('.year-tab').forEach(el => {
+        el.classList.remove('active');
+    });
+    
+    // Show selected year content
+    document.getElementById('year-' + year).style.display = 'block';
+    
+    // Set active tab (find by text content)
+    document.querySelectorAll('.year-tab').forEach(el => {
+        if (el.textContent.trim() === year.toString()) {
+            el.classList.add('active');
+        }
+    });
+}
+</script>
+
+<style>
+.year-tab {
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #6b7280;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.year-tab:hover {
+    color: #1f2937;
+}
+
+.year-tab.active {
+    color: #0ea5e9;
+    border-bottom-color: #0ea5e9;
+}
+
+.ratio-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #f0f4f8 100%);
+    border-left: 4px solid #0ea5e9;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.ratio-card h5 {
+    margin: 0 0 12px 0;
+    font-size: 1.1em;
+    color: #1f2937;
+}
+
+.ratio-value {
+    font-size: 2em;
+    font-weight: bold;
+    color: #0ea5e9;
+    margin: 8px 0;
+}
+
+.ratio-unit {
+    font-size: 0.5em;
+    margin-left: 4px;
+}
+
+.ratio-formula {
+    font-size: 0.9em;
+    color: #6b7280;
+    margin: 8px 0;
+    padding: 8px;
+    background: white;
+    border-radius: 4px;
+}
+
+.ratios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+}
+</style>
+{% endblock %}

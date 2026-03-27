@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}GST Number Search — auditX{% endblock %}
+
+{% block content %}
+<div class="gst-search-section">
+    <div class="card">
+        <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+            </svg>
+            GST Company Lookup
+        </h2>
+        <p class="subtitle">
+            Search the official GST portal to retrieve company details, registration status, and business information.
+        </p>
+
+        <form action="{{ url_for('search_gst') }}" method="post" class="gst-search-form">
+            <div class="form-group">
+                <label for="gstin">GST Identification Number (GSTIN)</label>
+                <input type="text" id="gstin" name="gstin" 
+                       placeholder="e.g., 27AAFCT0001A1Z5" 
+                       maxlength="15" 
+                       pattern="[A-Z0-9]{15}" 
+                       required
+                       style="width: 100%; padding: 12px; font-family: monospace; font-size: 16px; border: 1px solid #ddd; border-radius: 4px;">
+                <small style="opacity: 0.7; display: block; margin-top: 0.5rem;">
+                    Enter a valid 15-character GSTIN. Format: AA-BBBBB-CCCC-DDD
+                </small>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label for="search_mode">Search Mode</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+                    <div style="display: flex; align-items: center;">
+                        <input type="radio" id="auto_mode" name="search_mode" value="auto" checked
+                               style="margin-right: 0.5rem; cursor: pointer;">
+                        <label for="auto_mode" style="cursor: pointer; margin: 0;">
+                            <strong>Automatic</strong>
+                            <small style="display: block; opacity: 0.7;">
+                                Wait in background (requires solving CAPTCHA manually on portal)
+                            </small>
+                        </label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="radio" id="manual_mode" name="search_mode" value="manual"
+                               style="margin-right: 0.5rem; cursor: pointer;">
+                        <label for="manual_mode" style="cursor: pointer; margin: 0;">
+                            <strong>Manual</strong>
+                            <small style="display: block; opacity: 0.7;">
+                                Opens browser window for you to enter CAPTCHA
+                            </small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="display: inline; margin-right: 0.5rem;">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                </svg>
+                Search GST Portal
+            </button>
+        </form>
+
+        {% if error %}
+        <div class="alert alert-error" style="margin-top: 1.5rem; padding: 12px; background: #fee; border-left: 4px solid #f44; border-radius: 4px;">
+            <strong>❌ Error:</strong> {{ error }}
+        </div>
+        {% endif %}
+    </div>
+
+    {% if result %}
+    <div class="card" style="margin-top: 2rem;">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24">
+                <path d="M9 12l2 2 4-4"/>
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            Company Details
+        </h3>
+
+        {% if result.error %}
+        <div class="alert alert-warning" style="padding: 12px; background: #fef3cd; border-left: 4px solid #ffc107; border-radius: 4px; margin-bottom: 1rem;">
+            <strong>⚠️ Search Note:</strong> {{ result.error }}
+        </div>
+        {% endif %}
+
+        <div class="details-grid">
+            <div class="detail-item">
+                <label>GSTIN</label>
+                <div class="detail-value mono">{{ result.gstin }}</div>
+            </div>
+
+            {% if result.legal_name %}
+            <div class="detail-item">
+                <label>Legal Name</label>
+                <div class="detail-value">{{ result.legal_name }}</div>
+            </div>
+            {% endif %}
+
+            {% if result.trade_name %}
+            <div class="detail-item">
+                <label>Trade Name</label>
+                <div class="detail-value">{{ result.trade_name }}</div>
+            </div>
+            {% endif %}
+
+            {% if result.status %}
+            <div class="detail-item">
+                <label>Status</label>
+                {% if 'Active' in result.status %}
+                <div class="detail-value" style="padding: 6px 12px; background: #d4edda; border-radius: 4px; display: inline-block;">
+                    {{ result.status }}
+                </div>
+                {% else %}
+                <div class="detail-value" style="padding: 6px 12px; background: #f8d7da; border-radius: 4px; display: inline-block;">
+                    {{ result.status }}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if result.registration_date %}
+            <div class="detail-item">
+                <label>Registration Date</label>
+                <div class="detail-value">{{ result.registration_date }}</div>
+            </div>
+            {% endif %}
+
+            {% if result.state %}
+            <div class="detail-item">
+                <label>State</label>
+                <div class="detail-value">{{ result.state }}</div>
+            </div>
+            {% endif %}
+
+            {% if result.business_type %}
+            <div class="detail-item">
+                <label>Business Type</label>
+                <div class="detail-value">{{ result.business_type }}</div>
+            </div>
+            {% endif %}
+
+            {% if result.address %}
+            <div class="detail-item" style="grid-column: 1 / -1;">
+                <label>Principal Address</label>
+                <div class="detail-value">{{ result.address }}</div>
+            </div>
+            {% endif %}
+
+            {% if result.principal_place %}
+            <div class="detail-item" style="grid-column: 1 / -1;">
+                <label>Principal Place of Business</label>
+                <div class="detail-value">{{ result.principal_place }}</div>
+            </div>
+            {% endif %}
+
+            {% if result.additional_places %}
+            <div class="detail-item" style="grid-column: 1 / -1;">
+                <label>Additional Places of Business</label>
+                <div style="margin-top: 0.5rem;">
+                    {% for place in result.additional_places %}
+                    <div style="padding: 8px; background: #f5f5f5; border-radius: 4px; margin-bottom: 6px;">
+                        📍 {{ place }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
+            <a href="{{ url_for('search_gst_page') }}" class="btn btn-secondary">
+                ← Search Another GSTIN
+            </a>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary" style="margin-left: 0.5rem;">
+                Back to Balance Sheet Analyzer
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.gst-search-section {
+    max-width: 900px;
+    margin: 2rem auto;
+}
+
+.gst-search-form {
+    margin-top: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.detail-item label {
+    display: block;
+    font-size: 0.85em;
+    opacity: 0.7;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.detail-value {
+    font-size: 1em;
+    color: #1f2937;
+    word-wrap: break-word;
+}
+
+.detail-value.mono {
+    font-family: monospace;
+    font-weight: 600;
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 1rem 0;
+}
+
+.alert-error {
+    background: #fee;
+    border-left: 4px solid #f44;
+    color: #c33;
+}
+
+.alert-warning {
+    background: #fef3cd;
+    border-left: 4px solid #ffc107;
+    color: #856404;
+}
+</style>
+{% endblock %}

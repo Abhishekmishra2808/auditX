@@ -9,7 +9,9 @@ All mappings are confidence-scored and auditable. The system never guesses
 silently — ambiguous or low-confidence mappings are flagged explicitly.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Financial Mapper Team"
 
+from financial_mapper.aggregator import compute_aggregates  # noqa: F401
+from financial_mapper.hierarchy_builder import build_hierarchy  # noqa: F401
 from financial_mapper.pipeline import FinancialMappingPipeline  # noqa: F401

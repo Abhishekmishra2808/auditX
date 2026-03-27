@@ -48,11 +48,50 @@ class ValidationConfig:
 
 
 @dataclass(frozen=True)
+class LLMConfig:
+    """Controls LLM-based fallback mapping layer."""
+
+    # When True, LLM fallback is available and called for unresolved terms
+    enabled: bool = True
+
+    # Hugging Face model identifier (with provider suffix for router endpoint)
+    model_id: str = "mistralai/Mistral-7B-Instruct-v0.2:featherless-ai"
+
+    # Minimum confidence (0.0–1.0) for LLM mappings to be accepted
+    confidence_threshold: float = 0.75
+
+    # HTTP timeout for HF API calls (seconds)
+    timeout: int = 20
+
+    # When True, rejected LLM mappings (low confidence or invalid concept)
+    # are still logged but do not produce mapping results
+    log_rejected: bool = True
+
+
+@dataclass(frozen=True)
+class HierarchyConfig:
+    """Controls hierarchy building and aggregation behaviour."""
+
+    # Keywords that identify section headers in balance sheets (lowercased).
+    # If empty, falls back to defaults in hierarchy_builder.py.
+    section_keywords: list[str] = field(default_factory=list)
+
+    # Prefix used to detect total rows (e.g. "Total Current Assets").
+    total_prefix: str = "Total"
+
+    # Relative tolerance for children-sum vs stated-total cross-checks.
+    # abs(computed - stated) / stated <= tolerance is acceptable.
+    aggregation_tolerance: float = 0.01
+
+
+@dataclass(frozen=True)
 class PipelineConfig:
     """Top-level configuration aggregating all sub-configs."""
 
     matching: MatchingConfig = field(default_factory=MatchingConfig)
     validation: ValidationConfig = field(default_factory=ValidationConfig)
+    llm: LLMConfig = field(default_factory=LLMConfig)
+    hierarchy: HierarchyConfig = field(default_factory=HierarchyConfig)
 
     # Logging level for the mapping audit trail
     log_level: int = logging.INFO

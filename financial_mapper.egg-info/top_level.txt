@@ -1,2 +1,0 @@
-financial_mapper
-web

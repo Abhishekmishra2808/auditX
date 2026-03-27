@@ -14,7 +14,7 @@
         </div>
         <h2>Upload Your Balance Sheet</h2>
         <p class="subtitle">
-            Upload a financial statement in XLSX, CSV, or JSON format. auditX will automatically
+            Upload a financial statement in XLSX, CSV, JSON, PDF, or TXT format. auditX will automatically
             detect the layout, extract standardised values, and calculate key financial ratios.
         </p>
 
@@ -29,10 +29,22 @@
                     </svg>
                     <span class="file-label-text">
                         <span id="file-name" class="file-name">Drag & drop or click to choose a file</span>
-                        <span class="file-hint">XLSX, CSV, JSON, TXT — up to 16 MB</span>
+                        <span class="file-hint">XLSX, CSV, JSON, PDF, TXT — up to 16 MB</span>
                     </span>
                 </label>
-                <input type="file" id="file" name="file" accept=".xlsx,.xls,.csv,.json,.txt" required>
+                <input type="file" id="file" name="file" accept=".xlsx,.xls,.csv,.json,.txt,.pdf" required>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <label for="gstin" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                    GST Identification Number (Optional)
+                </label>
+                <input type="text" id="gstin" name="gstin" placeholder="e.g., 27AAFCT5055K1Z0" 
+                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace;" 
+                       maxlength="15" pattern="[A-Z0-9]{15}" title="15 alphanumeric characters">
+                <small style="opacity: 0.7; display: block; margin-top: 0.25rem;">
+                    Leave empty to skip GST verification, or enter a valid 15-character GSTIN
+                </small>
             </div>
 
             <button type="submit" class="btn btn-primary">
@@ -44,6 +56,14 @@
                 </svg>
                 Analyze Statement
             </button>
+
+            <a href="{{ url_for('search_gst') }}" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem; display: block; text-align: center; text-decoration: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="display: inline; margin-right: 0.5rem; vertical-align: middle;">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                </svg>
+                Or Search GST Number
+            </a>
         </form>
 
         <div class="features">

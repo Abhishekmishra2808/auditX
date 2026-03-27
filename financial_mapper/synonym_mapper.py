@@ -424,6 +424,53 @@ class SynonymMapper:
         logger.info("Loaded %d custom synonyms from %s", len(data), path)
         return len(data)
 
+    def save_new_mapping(self, raw_label: str, canonical: str, output_path: Path) -> None:
+        """Persist a user-confirmed mapping to a JSON file for future use.
+
+        This is called when a user confirms an LLM-suggested mapping or manually
+        corrects an unmapped label. The mapping is added to the in-memory dictionary
+        and also written to a JSON file for persistence across runs.
+
+        Parameters
+        ----------
+        raw_label : str
+            The raw input label (e.g., "Current Liab.")
+        canonical : str
+            The canonical field name it should map to
+        output_path : Path
+            File path where the mapping will be appended/saved
+        """
+        # First validate and add to in-memory dictionary
+        self.add_synonym(raw_label, canonical)
+
+        # Then persist to disk
+        try:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Load existing custom synonyms if file exists
+            if output_path.exists():
+                with open(output_path, encoding="utf-8") as fh:
+                    data: Dict[str, str] = json.load(fh)
+            else:
+                data = {}
+
+            # Add/update the new mapping
+            data[raw_label] = canonical
+
+            # Write back to file
+            with open(output_path, "w", encoding="utf-8") as fh:
+                json.dump(data, fh, indent=2, ensure_ascii=False)
+
+            logger.info(
+                "Persisted new mapping: %r → %r to %s",
+                raw_label,
+                canonical,
+                output_path,
+            )
+        except Exception as e:
+            logger.error("Failed to persist mapping to %s: %s", output_path, e)
+
+
     # ------------------------------------------------------------------ #
     # Introspection
     # ------------------------------------------------------------------ #

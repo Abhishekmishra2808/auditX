@@ -88,6 +88,7 @@
                 </thead>
                 <tbody>
                     {% for mapping in result.mappings %}
+                    {% if mapping.canonical_name in visible_data %}
                     <tr {% if mapping.warnings %}class="row-warning"{% endif %}>
                         <td><strong>{{ mapping.canonical_name }}</strong></td>
                         <td class="text-muted">{{ mapping.raw_label }}</td>
@@ -119,6 +120,7 @@
                         </td>
                     </tr>
                     {% endif %}
+                    {% endif %}
                     {% endfor %}
                 </tbody>
             </table>
@@ -126,6 +128,7 @@
     </div>
 
     <!-- Financial Ratios -->
+    {% if ratios %}
     {% for category, category_ratios in ratios.items() %}
     <div class="card">
         <h3>
@@ -191,6 +194,12 @@
         </div>
     </div>
     {% endfor %}
+    {% else %}
+    <div class="card">
+        <h3>Financial Ratios</h3>
+        <p class="card-desc">No ratios could be calculated from the fields available in this uploaded sheet.</p>
+    </div>
+    {% endif %}
 
     <!-- Unmapped Fields -->
     {% if result.unmapped %}

@@ -1,0 +1,60 @@
+Important Ratios 
+Liquidity Ratios (Short-term repayment ability) 
+ Current Ratio = Current Assets ÷ Current Liabilities
+     Ideal for MSMEs: 1.33 : 1 or higher
+Solvency Ratios (Long-term stability)
+Debt–Equity Ratio = Total Outside Liabilities ÷ Net Worth
+    Acceptable range:
+Manufacturing: ≤ 2 : 1
+Trading / Services: ≤ 3 : 1 
+Profitability Ratios (Earning strength)
+Net Profit Ratio = Net Profit ÷ Sales × 100
+ Expected:
+Manufacturing: 5%–10%+
+ Trading: 2%–5%
+Operating Profit Ratio = Operating Profit ÷ Sales × 100
+Debt Servicing Ability 
+DSCR (Debt Service Coverage Ratio) = Cash Accruals ÷ (Term Loan Installment + Interest)
+                       Minimum required: 1.25
+                       Comfortable: 1.5+
+Efficiency Ratios (Operational discipline)
+Inventory Turnover Ratio = Cost of Goods Sold ÷ Average Inventory
+Debtors Turnover Ratio = Credit Sales ÷ Average Debtors
+Promoter Strength Ratio
+TOL / TNW Ratio = Total Outside Liabilities ÷ Tangible Net Worth
+Preferred: ≤ 4
+Break-Even Analysis
+              a) Break-Even Point
+*Important points
+Liquidity ratio
+Current Ratio = Current Assets ÷ Current Liabilities
+Solvency Ratios
+a)Debt Equity Ratio = Total Outside Liabilities ÷ Net Worth
+i) Total outside liabilities = Long term borrowings+ long term provisions
+ii) Net worth = share capital + Reserve and surplus 
+Profitability Ratios
+Net Profit Ratio = Net Profit ÷ Sales × 100
+i) Net profit = Gross profit - Indirect expenses 
+ii)Sales = cash sales + credit sales
+Operating Profit Ratio = Operating Profit ÷ Sales × 100
+i)Operating profit = Gross + other operating income - other operating expenses 
+ii)Sales = cash sales + credit sales
+Debt Servicing Ability 
+DSCR (Debt Service Coverage Ratio) = Cash Accruals ÷ (Term Loan Installment + Interest)
+Efficiency Ratios
+a)Inventory Turnover Ratio = Cost of Goods Sold (cogs)÷ Average Inventory
+i) cogs= opening inventory+ net purchases+ direct expenses - closing inventory 
+ii) Average inventory= opening inventory+ closing inventory ÷ 2
+Debtors turnover ratio = Credit Sales ÷ Average Debtors
+i) credit sales= net sales - cash sales 
+ii) Average Debtors= opening debtors + closing Debtors ÷2
+Promoter Strength Ratio
+TOL / TNW Ratio = Total Outside Liabilities ÷ Tangible Net Worth
+ i) Total Outside Liabilities  = Long-Term Liabilities + Current Liabilities
+ii) Tangible Net worth = Net Worth − Intangible Assets
+Break-Even Analysis
+Break-Even Point (Units) = Fixed Cost ÷ (Selling Price − Variable Cost)
+Break-Even Point (Sales Value)= 
+Break-Even Units × Selling Price
+Maximum permissible bank finance (MPBF)
+i) MPBF = Current Assets − Current Liabilities − 25% of Current Assets

@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results — auditX{% endblock %}
+
+{% block content %}
+<div class="results-section">
+    <div class="header-actions">
+        <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28">
+                <path d="M12 20V10M18 20V4M6 20v-4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Analysis Results: <span class="accent">{{ filename }}</span>
+        </h2>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12,19 5,12 12,5"/>
+            </svg>
+            Upload Another
+        </a>
+    </div>
+
+    <!-- GSTIN Verification Section (if provided) -->
+    {% if gstin %}
+    <div class="card" style="background: {% if gstin_valid %}#f0fdf4{% else %}#fefce8{% endif %}; border-left: 4px solid {% if gstin_valid %}#22c55e{% else %}#f59e0b{% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+            <div>
+                <h3 style="margin-top: 0;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="{% if gstin_valid %}#22c55e{% else %}#f59e0b{% endif %}" stroke-width="1.5" width="22" height="22" style="display: inline; margin-right: 0.5rem; vertical-align: middle;">
+                        {% if gstin_valid %}
+                        <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                        {% else %}
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        {% endif %}
+                    </svg>
+                    GST Information
+                </h3>
+                <p style="margin: 0.5rem 0; font-family: monospace; font-weight: 500;">{{ gstin }}</p>
+                <p style="margin: 0.5rem 0; opacity: 0.8; font-size: 0.9em;">{{ gst_message }}</p>
+                {% if gstin_valid and gstin_portal_url %}
+                <a href="{{ gstin_portal_url }}" target="_blank" class="btn btn-primary" style="display: inline-block; margin-top: 0.5rem; text-decoration: none; padding: 8px 16px; background: #22c55e; color: white; border-radius: 4px; font-size: 0.9em;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="display: inline; margin-right: 0.5rem; vertical-align: middle;">
+                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                    Verify on GST Portal →
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Raw Extracted Terms Section -->
+    <div class="card">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+            1. Raw Extracted Terms
+        </h3>
+        <p class="card-desc">Original field names and values from your balance sheet (no mapping applied):</p>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Field Name</th>
+                        {% if raw_years and raw_terms_matrix %}
+                            {% for year in raw_years %}
+                            <th class="text-right">{{ year }}</th>
+                            {% endfor %}
+                        {% else %}
+                        <th class="text-right">Value</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if raw_years and raw_terms_matrix %}
+                        {% for term, yearly_values in raw_terms_matrix.items() %}
+                        <tr>
+                            <td><strong>{{ term }}</strong></td>
+                            {% for year in raw_years %}
+                            {% set value = yearly_values.get(year) %}
+                            <td class="text-right mono-num">
+                                {% if value is number %}
+                                    {{ "{:,.2f}".format(value) }}
+                                {% elif value is not none %}
+                                    {{ value }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        {% for term, value in raw_terms.items() %}
+                        <tr>
+                            <td><strong>{{ term }}</strong></td>
+                            <td class="text-right mono-num">
+                                {% if value is number %}
+                                    {{ "{:,.2f}".format(value) }}
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Financial Ratios with LLM Intelligence -->
+    {% if yearly_ratios %}
+    <div class="card">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <path d="M12 20V10M18 20V4M6 20v-4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            2. Calculated Ratios (Year-wise, LLM-Selected Terms)
+        </h3>
+        <p class="card-desc">For each year, terms are selected dictionary-first with LLM fallback when required.</p>
+
+        <div class="year-ratio-nav">
+            {% for year in raw_years %}
+            <span class="year-ratio-chip">{{ year }}</span>
+            {% endfor %}
+        </div>
+
+        {% for year in raw_years %}
+        <section class="year-ratio-section">
+            <h4 class="year-ratio-heading">{{ year }}</h4>
+
+            {% if yearly_ratios.get(year) %}
+                {% for category, category_ratios in yearly_ratios[year].items() %}
+                <div class="ratio-category-block">
+                    <h5 class="ratio-category-title">{{ category }}</h5>
+                    <div class="ratios-grid">
+                        {% for ratio_name, ratio_data in category_ratios.items() %}
+                        <div class="ratio-card ratio-has-value">
+                            <h5>{{ ratio_name }}</h5>
+
+                            <div class="ratio-value">
+                                {% if ratio_data.value is none %}
+                                    —
+                                {% elif ratio_data.percentage is defined and ratio_data.percentage is not none %}
+                                    {{ "{:.2f}".format(ratio_data.percentage) }}<span class="ratio-unit">%</span>
+                                {% else %}
+                                    {{ "{:,.2f}".format(ratio_data.value) }}
+                                {% endif %}
+                            </div>
+
+                            <div class="ratio-formula">
+                                <small style="opacity: 0.7;">Formula:</small><br/>
+                                {{ ratio_data.formula }}
+                            </div>
+
+                            {% if ratio_data.llm_selection %}
+                            <div class="ratio-selection">
+                                <strong>Selected Terms:</strong> {{ ratio_data.llm_selection }}
+                            </div>
+                            {% endif %}
+
+                            {% set interp = (ratio_data.interpretation or '')|lower %}
+                            {% set is_missing = ratio_data.value is none %}
+                            {% set is_good = (not is_missing) and (('ideal' in interp) or ('good' in interp) or ('positive' in interp) or ('strong' in interp)) %}
+                            {% set is_risk = (not is_missing) and (('risk' in interp) or ('negative' in interp) or ('over-leveraged' in interp) or ('crisis' in interp) or ('default' in interp) or ('weak' in interp)) %}
+
+                            <div class="ratio-interpretation">
+                                <span class="ratio-flag {% if is_missing %}ratio-flag-missing{% elif is_good %}ratio-flag-good{% elif is_risk %}ratio-flag-risk{% else %}ratio-flag-caution{% endif %}">
+                                    {% if is_missing %}Missing{% elif is_good %}Good{% elif is_risk %}Risk{% else %}Caution{% endif %}
+                                </span>
+                                <small>{{ ratio_data.interpretation }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <p class="card-desc">No ratios could be calculated for {{ year }}.</p>
+            {% endif %}
+        </section>
+        {% endfor %}
+    </div>
+    {% elif ratios %}
+    <div class="card">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <path d="M12 20V10M18 20V4M6 20v-4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            2. Calculated Ratios (LLM-Selected Terms)
+        </h3>
+        <p class="card-desc">LLM analyzes which of your raw terms match each formula variable:</p>
+        
+        {% for category, category_ratios in ratios.items() %}
+        <div style="margin-top: 2rem;">
+            <h4>{{ category }} Ratios</h4>
+            <div class="ratios-grid">
+                {% for ratio_name, ratio_data in category_ratios.items() %}
+                <div class="ratio-card ratio-has-value">
+                    <h5>{{ ratio_name }}</h5>
+                    
+                    <div class="ratio-value">
+                        {% if ratio_data.percentage is defined and ratio_data.percentage is not none %}
+                            {{ "{:.2f}".format(ratio_data.percentage) }}<span class="ratio-unit">%</span>
+                        {% else %}
+                            {{ "{:,.2f}".format(ratio_data.value) }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="ratio-formula">
+                        <small style="opacity: 0.7;">Formula:</small><br/>
+                        {{ ratio_data.formula }}
+                    </div>
+                    
+                    {% if ratio_data.llm_selection %}
+                    <div style="background: #f0f9ff; padding: 8px; margin: 8px 0; border-radius: 4px; font-size: 0.85em; border-left: 3px solid #0ea5e9;">
+                        <strong>LLM Selected:</strong> {{ ratio_data.llm_selection }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="ratio-interpretation">
+                        <small>{{ ratio_data.interpretation }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+        <h3>Financial Ratios</h3>
+        <p class="card-desc">No ratios could be calculated. This may mean the raw terms extracted don't match common financial metric names. Ratios require at least two matching variables.</p>
+    </div>
+    {% endif %}
+
+    <!-- Mapping Details for Transparency -->
+    <div class="card" style="margin-top: 2rem;">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+            </svg>
+            Backend Processing Details
+        </h3>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th class="text-right">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Raw terms extracted</td>
+                        <td class="text-right">{{ raw_terms|length }}</td>
+                    </tr>
+                    <tr>
+                        <td>Unmapped fields</td>
+                        <td class="text-right">{{ result.unmapped|length }}</td>
+                    </tr>
+                    <tr>
+                        <td>Ratios computed</td>
+                        <td class="text-right">{% set ratio_count = ratios.values()|map('length')|sum %}{{ ratio_count }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Unmapped Fields (if any) -->
+    {% if result.unmapped %}
+    <div class="card card-warning" style="margin-top: 2rem;">
+        <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Fields That Could Not Be Extracted
+        </h3>
+        <p class="card-desc">These fields were in the file but could not be parsed as financial values:</p>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Label</th>
+                        <th class="text-right">Raw Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in result.unmapped %}
+                    <tr>
+                        <td>{{ item.raw_label }}</td>
+                        <td class="text-right">{{ item.raw_value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.year-ratio-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    margin-bottom: 6px;
+}
+
+.year-ratio-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.year-ratio-section {
+    margin-top: 1.35rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+}
+
+.year-ratio-heading {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    font-size: 0.95rem;
+    border: 1px solid var(--accent-glow-strong);
+}
+
+.ratio-category-block {
+    margin-top: 1rem;
+}
+
+.ratio-category-title {
+    margin-bottom: 0.8rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.ratio-card {
+    background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-input) 100%);
+    border: 1px solid var(--border-light);
+    border-left: 4px solid var(--accent);
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.ratio-card h5 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.ratio-value {
+    font-size: 1.35em;
+    font-weight: bold;
+    color: var(--accent);
+    margin: 8px 0;
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+.ratio-unit {
+    font-size: 0.5em;
+    margin-left: 4px;
+}
+
+.ratio-formula {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 8px 0;
+    padding: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.ratio-selection {
+    background: var(--accent-glow);
+    color: var(--text-muted);
+    padding: 8px;
+    margin: 8px 0;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    border-left: 3px solid var(--accent-dim);
+}
+
+.ratio-interpretation {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.ratio-flag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+}
+
+.ratio-flag-good {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.35);
+}
+
+.ratio-flag-caution {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+.ratio-flag-risk {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+.ratio-flag-missing {
+    color: #94a3b8;
+    background: rgba(148, 163, 184, 0.14);
+    border-color: rgba(148, 163, 184, 0.35);
+}
+
+.ratio-interpretation small {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.ratios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+    .ratios-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .ratio-card {
+        padding: 12px;
+    }
+
+    .ratio-value {
+        font-size: 1.2em;
+    }
+}
+</style>
+{% endblock %}
